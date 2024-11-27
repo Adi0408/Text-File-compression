@@ -19,17 +19,6 @@ struct Node {
     }
 };
 
-// Function to create and build a Min-Heap using priority_queue
-priority_queue<Node, vector<Node>, greater<Node>> createAndBuildMinHeap(char arr[], int freq[], int unique_size) {
-    priority_queue<Node, vector<Node>, greater<Node>> minHeap;
-
-    // Add nodes to the min heap (priority_queue)
-    for (int i = 0; i < unique_size; ++i) {
-        minHeap.push(Node(arr[i], freq[i]));
-    }
-
-    return minHeap;
-}
 
 int main() {
     return 0;
