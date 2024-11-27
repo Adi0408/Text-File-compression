@@ -2,8 +2,11 @@
 #include <vector>
 #include <queue>
 #include <memory>  // For a smart pointer make_unique
+#include <fstream>
 
 using namespace std;
+
+// for implementation of priority queue and its working in depth refer gfg
 
 // Structure for tree node
 struct Node {
@@ -23,7 +26,71 @@ struct CompareNode {
     }
 };
 
-// for implementation of priority queue and its working in depth refer gfg
+
+// structure for adding initial data into the txt file i.e char-len-dec code
+struct Code {
+    char k;
+    char len;
+    vector<int> codeArr;
+};
+
+// func to check leaf node reached or not
+bool isLeaf(const Node* node) {
+    if (node->left == nullptr && node->right == nullptr)
+        return true;
+    else 
+        return false;
+}
+
+// func to convert bin to dec
+int convertBintoDec (const vector<int>& binary) {
+    int decimal = 0;
+    for (int i = 0; i < binary.size(); i++) {
+        decimal = (decimal << 1) | binary[i];
+    }
+
+    return decimal;
+}
+
+// func to write char-len-dec code to the file
+void huffmandicttofile (ofstream& outputfile, Node* root, vector<int>& codePath){
+    if (root == NULL) return;
+
+    // traverse left
+    if (root -> left) {
+        codePath.push_back(0);
+        huffmandicttofile(outputfile, root->left, codePath);
+        codePath.pop_back(); 
+    }
+
+    // right node 
+    if (root -> right) {
+        codePath.push_back(1);
+        huffmandicttofile(outputfile, root -> right, codePath);
+        codePath.pop_back();
+    }
+
+    // we reach leaf node and append that to the file
+    if (isLeaf(root)) {
+        Code* data;
+        data->k = root->character;
+        data->len = codePath.size();
+        data->codeArr = codePath;
+
+        // convert bin to dec
+        int decCode = convertBintoDec(codePath);
+
+        // write char to file
+        outputfile << data->k << " ";
+
+        // write codeword length
+        outputfile << data->len << " ";
+
+        // write dec form of codeword
+        outputfile << decCode << "\n";
+
+    }
+}
 
 // function for huffman tree , directly using priority queue
 Node* huffmanTree(char arr[], int freq[], int unique_size) {
@@ -55,6 +122,7 @@ Node* huffmanTree(char arr[], int freq[], int unique_size) {
     Node* root = minHeap.top();
     return root;
 }
+
 
 
 int main() {
