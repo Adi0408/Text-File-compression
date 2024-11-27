@@ -3,6 +3,7 @@
 #include <queue>
 #include <memory>  // For a smart pointer make_unique
 #include <fstream>
+#include <unordered_map> 
 
 using namespace std;
 
@@ -86,38 +87,39 @@ int convertBintoDec (const vector<int>& binary) {
 }
 
 // func to write char-len-dec code to the file
-void huffmandicttofile (ofstream& outputfile, Node* root, vector<int>& codePath){
+void huffmandicttofile (ofstream& outputfile, Node* root, vector<int>& codePath, unordered_map<char, Code>& codeBook){
     if (root == NULL) return;
 
     // traverse left
     if (root -> left) {
         codePath.push_back(0);
-        huffmandicttofile(outputfile, root->left, codePath);
+        huffmandicttofile(outputfile, root->left, codePath, codeBook);
         codePath.pop_back(); 
     }
 
     // right node 
     if (root -> right) {
         codePath.push_back(1);
-        huffmandicttofile(outputfile, root -> right, codePath);
+        huffmandicttofile(outputfile, root -> right, codePath, codeBook);
         codePath.pop_back();
     }
 
     // we reach leaf node and append that to the file
     if (isLeaf(root)) {
-        Code* data;
-        data->k = root->character;
-        data->len = codePath.size();
-        data->codeArr = codePath;
+        Code data;
+        data.k = root->character;
+        data.len = codePath.size();
+        data.codeArr = codePath;
 
+        codeBook[data.k] = data; 
         // convert bin to dec
         int decCode = convertBintoDec(codePath);
 
         // write char to file
-        outputfile << data->k << " ";
+        outputfile << data.k << " ";
 
         // write codeword length
-        outputfile << data->len << " ";
+        outputfile << data.len << " ";
 
         // write dec form of codeword
         outputfile << decCode << "\n";
@@ -125,6 +127,57 @@ void huffmandicttofile (ofstream& outputfile, Node* root, vector<int>& codePath)
     }
 }
 
+
+// Function to compress the file using Huffman codes
+void compressFile(const string& inputFile, const string& outputFile, const unordered_map<char, Code>& codebook) {
+    ifstream inFile(inputFile, ios::binary);
+    ofstream outFile(outputFile, ios::binary);
+
+    if (!inFile.is_open()) {
+        cerr << "Error opening input file!" << endl;
+        return;
+    }
+
+    if (!outFile.is_open()) {
+        cerr << "Error opening output file!" << endl;
+        return;
+    }
+
+    unsigned char buffer = 0;
+    int bitCount = 0;
+
+    char ch;
+    while (inFile.get(ch)) {
+        const Code& data = codebook.at(ch);  // Get the Huffman code for the character
+
+        // Iterate through the Huffman code for this character
+        for (int i = 0; i < data.len; ++i) {
+            if (bitCount < 8) {
+                buffer <<= 1;  // Shift buffer to make space for next bit
+                buffer |= data.codeArr[i];  // Add the next bit from the code
+                ++bitCount;
+            } else {
+                // Write out the buffer to file once it is full (8 bits)
+                outFile.put(buffer);
+                buffer = 0;  // Reset buffer
+                bitCount = 0;
+
+                // Add the bit from the code to the buffer
+                buffer |= data.codeArr[i];
+                ++bitCount;
+            }
+        }
+    }
+
+    // Write any remaining bits in the buffer
+    if (bitCount > 0) {
+        buffer <<= (8 - bitCount);  // Shift out remaining bits
+        outFile.put(buffer);
+    }
+
+    inFile.close();
+    outFile.close();
+}
 
 int main() {
     return 0;
